@@ -18,7 +18,7 @@
             @keyup.enter="handleSubmit"
             style="margin-top: 25px"
           >
-            <ElFormItem prop="account">
+            <ElFormItem prop="account" v-if="false">
               <ElSelect v-model="formData.account" @change="setupAccount">
                 <ElOption
                   v-for="account in accounts"
@@ -96,9 +96,9 @@
 
             <div class="mt-5 text-sm text-gray-600">
               <span>{{ $t('login.noAccount') }}</span>
-              <RouterLink class="text-theme" :to="{ name: 'Register' }">{{
-                $t('login.register')
-              }}</RouterLink>
+              <RouterLink class="text-theme" :to="{ name: 'Register' }"
+                >{{ $t('login.register') }}
+              </RouterLink>
             </div>
           </ElForm>
         </div>
@@ -110,6 +110,7 @@
 <script setup lang="ts">
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
+  import { userCacheStore } from '@/store/modules/cache'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth'
@@ -165,6 +166,7 @@
   const dragVerify = ref()
 
   const userStore = useUserStore()
+  const cacheStore = userCacheStore()
   const router = useRouter()
   const route = useRoute()
   const isPassing = ref(false)
@@ -188,15 +190,14 @@
   const loading = ref(false)
 
   onMounted(() => {
-    setupAccount('super')
+    setupAccount()
   })
 
   // 设置账号
-  const setupAccount = (key: AccountKey) => {
-    const selectedAccount = accounts.value.find((account: Account) => account.key === key)
-    formData.account = key
-    formData.username = selectedAccount?.userName ?? ''
-    formData.password = selectedAccount?.password ?? ''
+  const setupAccount = () => {
+    formData.username = cacheStore.getSavedUsername()
+    formData.password = cacheStore.getSavedPassword()
+    formData.rememberPassword = cacheStore.getIsRemember()
   }
 
   // 登录
@@ -217,11 +218,19 @@
       loading.value = true
 
       // 登录请求
-      const { username, password } = formData
+      const { username, password, rememberPassword } = formData
+
+      cacheStore.setIsRemember(rememberPassword)
+
+      if (rememberPassword) {
+        cacheStore.setSavedUsername(username)
+        cacheStore.setSavedPassword(password)
+      }
 
       const { token, refreshToken } = await fetchLogin({
-        userName: username,
-        password
+        username: username,
+        password,
+        captcha: isPassing.value
       })
 
       // 验证token

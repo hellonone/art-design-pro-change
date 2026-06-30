@@ -43,6 +43,7 @@ declare namespace Api {
       size: number
       /** 总条数 */
       total: number
+      query?: T
     }
 
     /** 通用搜索参数 */
@@ -64,8 +65,9 @@ declare namespace Api {
   namespace Auth {
     /** 登录参数 */
     interface LoginParams {
-      userName: string
+      username: string
       password: string
+      captcha: boolean
     }
 
     /** 登录响应 */
@@ -79,7 +81,7 @@ declare namespace Api {
       buttons: string[]
       roles: string[]
       userId: number
-      userName: string
+      username: string
       email: string
       avatar?: string
     }

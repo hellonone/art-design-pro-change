@@ -211,6 +211,8 @@
     disabledSearch?: boolean
     /** 搜索时是否清洗空值 */
     sanitizeOutput?: Partial<SanitizeOutputOptions>
+    /** 搜索参数类型 */
+    searchType?: 'normal' | 'advanced'
   }
 
   interface SanitizeOutputOptions {
@@ -241,6 +243,7 @@
     showReset: true,
     showSearch: true,
     disabledSearch: false,
+    searchType: 'normal',
     sanitizeOutput: () => ({})
   })
 
@@ -406,7 +409,12 @@
   }
 
   const getSanitizedOutput = () => {
-    return (sanitizeOutputValue(cloneModelValue(modelValue.value)) || {}) as Record<string, any>
+    if (props.searchType === 'normal') {
+      return (sanitizeOutputValue(cloneModelValue(modelValue.value)) || {}) as Record<string, any>
+    } else
+      return {
+        query: sanitizeOutputValue(cloneModelValue(modelValue.value)) || {}
+      } as Record<string, any>
   }
 
   // 组件
