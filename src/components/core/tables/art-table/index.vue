@@ -20,6 +20,36 @@
           </template>
         </ElTableColumn>
 
+        <!-- 渲染多级表头（含子列） -->
+        <ElTableColumn
+          v-else-if="col.children && col.children.length"
+          v-bind="cleanColumnProps(col)"
+        >
+          <template v-for="child in col.children" :key="child.prop || child.type">
+            <ElTableColumn v-bind="cleanColumnProps(child)">
+              <template v-if="child.useHeaderSlot && child.prop" #header="headerScope">
+                <slot
+                  :name="child.headerSlotName || `${child.prop}-header`"
+                  v-bind="{ ...headerScope, prop: child.prop, label: child.label }"
+                >
+                  {{ child.label }}
+                </slot>
+              </template>
+              <template v-if="child.useSlot && child.prop" #default="slotScope">
+                <slot
+                  v-if="shouldRenderSlotScope(slotScope)"
+                  :name="child.slotName || child.prop"
+                  v-bind="{
+                    ...slotScope,
+                    prop: child.prop,
+                    value: child.prop ? slotScope.row[child.prop] : undefined
+                  }"
+                />
+              </template>
+            </ElTableColumn>
+          </template>
+        </ElTableColumn>
+
         <!-- 渲染普通列 -->
         <ElTableColumn v-else v-bind="cleanColumnProps(col)">
           <template v-if="col.useHeaderSlot && col.prop" #header="headerScope">
@@ -286,6 +316,8 @@
     delete columnProps.headerSlotName
     delete columnProps.useSlot
     delete columnProps.slotName
+    // 删除子列配置，避免被当作 DOM 属性传给 ElTableColumn
+    delete columnProps.children
     return columnProps
   }
 

@@ -73,6 +73,7 @@ export interface ColumnOption<T = any> {
   visible?: boolean
   // 是否选中显示
   checked?: boolean
+  align?: 'left' | 'center' | 'right'
   // 自定义渲染函数
   formatter?: (row: T) => any
   // 插槽相关配置
@@ -84,6 +85,8 @@ export interface ColumnOption<T = any> {
   useHeaderSlot?: boolean
   // 表头插槽名称（默认为 `${prop}-header`）
   headerSlotName?: string
+  // 子列配置（用于多级表头）
+  children?: ColumnOption<T>[]
   // 其他属性
   [key: string]: any
 }
