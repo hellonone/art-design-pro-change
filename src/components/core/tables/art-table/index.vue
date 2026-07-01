@@ -4,7 +4,110 @@
 <!-- 获取 ref：默认暴露了 elTableRef 外部通过 ref.value.elTableRef 可以调用 el-table 方法 -->
 <template>
   <div class="art-table" :class="{ 'is-empty': isEmpty }" :style="containerHeight">
-    <ElTable ref="elTableRef" v-loading="!!loading" v-bind="mergedTableProps">
+    <div v-if="isMobile && $slots['mobile-item']" class="art-table-mobile-view">
+      <div
+        v-for="(row, index) in data"
+        :key="row.id || index"
+        class="art-table-mobile-item"
+        v-loading="!!loading"
+      >
+        <slot name="mobile-item" :row="row" :index="index" />
+      </div>
+    </div>
+    <div v-else-if="isMobile && mobileConfig" class="art-table-mobile-view">
+      <ElCard
+        v-for="(row, index) in data"
+        :key="row.id || index"
+        class="art-table-mobile-card"
+        v-loading="!!loading"
+      >
+        <template #header v-if="mobileConfig.header">
+          <div class="art-mobile-card-header">
+            <template v-if="mobileConfig.header.formatter">
+              <component :is="mobileConfig.header.formatter(row)" />
+            </template>
+            <template v-else>
+              <div
+                v-for="col in mobileConfig.header.columns"
+                :key="col.prop"
+                class="art-mobile-header-item"
+              >
+                <template v-if="col.formatter">
+                  <component v-if="isVNode(col.formatter(row))" :is="col.formatter(row)" />
+                  <span v-else>{{ col.formatter(row) }}</span>
+                </template>
+                <template v-else>
+                  {{ col.prop ? (row[col.prop] ?? '-') : '-' }}
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+        <div class="art-mobile-card-body" v-if="mobileConfig.list">
+          <template v-if="mobileConfig.list.formatter">
+            <component :is="mobileConfig.list.formatter(row)" />
+          </template>
+          <template v-else>
+            <div v-for="col in mobileConfig.list.columns" :key="col.prop" class="art-mobile-row">
+              <div v-if="col.children && col.children.length > 0" class="art-mobile-group">
+                <div class="art-mobile-group-label">{{ col.label }}</div>
+                <div
+                  v-for="child in col.children"
+                  :key="child.prop"
+                  class="art-mobile-row art-mobile-row-child"
+                >
+                  <span class="art-mobile-label">{{ child.label }}</span>
+                  <span class="art-mobile-value">
+                    <template v-if="child.formatter">
+                      <component v-if="isVNode(child.formatter(row))" :is="child.formatter(row)" />
+                      <span v-else>{{ child.formatter(row) }}</span>
+                    </template>
+                    <template v-else>
+                      {{ child.prop ? (row[child.prop] ?? '-') : '-' }}
+                    </template>
+                  </span>
+                </div>
+              </div>
+              <div v-else>
+                <span class="art-mobile-label">{{ col.label }}</span>
+                <span class="art-mobile-value">
+                  <template v-if="col.formatter">
+                    <component v-if="isVNode(col.formatter(row))" :is="col.formatter(row)" />
+                    <span v-else>{{ col.formatter(row) }}</span>
+                  </template>
+                  <template v-else>
+                    {{ col.prop ? (row[col.prop] ?? '-') : '-' }}
+                  </template>
+                </span>
+              </div>
+            </div>
+          </template>
+        </div>
+        <template #footer v-if="mobileConfig.footer">
+          <div class="art-mobile-card-footer">
+            <template v-if="mobileConfig.footer.formatter">
+              <component :is="mobileConfig.footer.formatter(row)" />
+            </template>
+            <template v-else>
+              <div
+                v-for="col in mobileConfig.footer.columns"
+                :key="col.prop"
+                class="art-mobile-footer-item"
+              >
+                <template v-if="col.formatter">
+                  <component v-if="isVNode(col.formatter(row))" :is="col.formatter(row)" />
+                  <span v-else>{{ col.formatter(row) }}</span>
+                </template>
+                <template v-else>
+                  {{ col.prop ? (row[col.prop] ?? '-') : '-' }}
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+      </ElCard>
+    </div>
+    <ElTable v-else ref="elTableRef" v-loading="!!loading" v-bind="mergedTableProps">
       <template v-for="col in columns" :key="col.prop || col.type">
         <!-- 渲染全局序号列 -->
         <ElTableColumn v-if="col.type === 'globalIndex'" v-bind="{ ...col }">
@@ -102,7 +205,15 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, nextTick, watchEffect, getCurrentInstance, useAttrs } from 'vue'
+  import {
+    ref,
+    computed,
+    nextTick,
+    watchEffect,
+    getCurrentInstance,
+    useAttrs,
+    type VNode
+  } from 'vue'
   import type { ElTable, TableProps } from 'element-plus'
   import { storeToRefs } from 'pinia'
   import { ColumnOption } from '@/types'
@@ -114,6 +225,7 @@
   defineOptions({ name: 'ArtTable' })
 
   const { width } = useWindowSize()
+  const isMobile = computed(() => width.value < 768)
   const elTableRef = ref<InstanceType<typeof ElTable> | null>(null)
   const paginationRef = ref<HTMLElement>()
   const tableHeaderRef = ref<HTMLElement>()
@@ -153,7 +265,7 @@
     /** 加载状态 */
     loading?: boolean
     /** 列渲染配置 */
-    columns?: ColumnOption[]
+    columns?: ColumnOption<Record<string, any>>[]
     /** 分页状态 */
     pagination?: PaginationConfig
     /** 分页配置 */
@@ -164,6 +276,8 @@
     emptyText?: string
     /** 是否开启 ArtTableHeader，解决表格高度自适应问题 */
     showTableHeader?: boolean
+    /** 移动端卡片配置 */
+    mobileConfig?: any
   }
 
   const props = withDefaults(defineProps<ArtTableProps>(), {
@@ -321,6 +435,12 @@
     return columnProps
   }
 
+  // 获取单元格值，支持 formatter 渲染
+  // 判断是否为 VNode
+  const isVNode = (value: any): value is VNode => {
+    return value !== null && typeof value === 'object' && '__v_isVNode' in value
+  }
+
   // 分页大小变化
   const handleSizeChange = (val: number) => {
     emit('pagination:size-change', val)
@@ -397,4 +517,5 @@
 
 <style lang="scss" scoped>
   @use './style';
+  @use './mobile';
 </style>
