@@ -1,130 +1,233 @@
 <template>
   <ElDialog
-    v-model="dialogVisible"
-    :title="dialogType === 'add' ? '添加用户' : '编辑用户'"
-    width="30%"
+    :title="dialogTitle"
+    :model-value="visible"
+    @update:model-value="handleCancel"
+    width="860px"
     align-center
+    class="menu-dialog"
+    @closed="handleClosed"
   >
-    <ElForm ref="formRef" :model="formData" :rules="rules" label-width="80px">
-      <ElFormItem label="用户名" prop="uName">
-        <ElInput v-model="formData.uName" placeholder="请输入大学名" />
-      </ElFormItem>
-      <ElFormItem label="手机号" prop="mName">
-        <ElInput v-model="formData.mName" placeholder="请输入专业名" />
-      </ElFormItem>
-      <ElFormItem label="标记" prop="tag">
-        <ElSelect v-model="formData.tag">
-          <ElOption label="冲" value="1" />
-          <ElOption label="稳" value="2" />
-          <ElOption label="保" value="3" />
-          <ElOption label="未标记" value="-1" />
-        </ElSelect>
-      </ElFormItem>
-    </ElForm>
+    <ArtForm
+      ref="formRef"
+      v-model="form"
+      :items="formItems"
+      :rules="rules"
+      :span="width > 640 ? 12 : 24"
+      :gutter="20"
+      label-width="120px"
+      :show-reset="false"
+      :show-submit="false"
+    >
+    </ArtForm>
+
     <template #footer>
-      <div class="dialog-footer">
-        <ElButton @click="dialogVisible = false">取消</ElButton>
-        <ElButton type="primary" @click="handleSubmit">提交</ElButton>
-      </div>
+      <span class="dialog-footer">
+        <ElButton @click="handleCancel">取 消</ElButton>
+        <ElButton type="primary" @click="handleSubmit">确 定</ElButton>
+      </span>
     </template>
   </ElDialog>
 </template>
 
 <script setup lang="ts">
-  import type { FormInstance, FormRules } from 'element-plus'
+  import type { FormRules } from 'element-plus'
+  import type { FormItem } from '@/components/core/forms/art-form/index.vue'
+  import ArtForm from '@/components/core/forms/art-form/index.vue'
+  import { useWindowSize } from '@vueuse/core'
+  import UniversityFormData = Api.University.UniversityFormData
+
+  const { width } = useWindowSize()
 
   interface Props {
     visible: boolean
-    type: string
-    userData?: Partial<Api.University.Table>
+    editData?: any
   }
 
   interface Emits {
     (e: 'update:visible', value: boolean): void
-    (e: 'submit'): void
+    (e: 'submit', data: UniversityFormData): void
   }
 
-  const props = defineProps<Props>()
+  const props = withDefaults(defineProps<Props>(), {
+    visible: false
+  })
+
   const emit = defineEmits<Emits>()
 
-  // 对话框显示控制
-  const dialogVisible = computed({
-    get: () => props.visible,
-    set: (value) => emit('update:visible', value)
-  })
+  const formRef = ref()
+  const isEdit = ref(false)
 
-  const dialogType = computed(() => props.type)
-
-  // 表单实例
-  const formRef = ref<FormInstance>()
-
-  // 表单数据
-  const formData = reactive({
+  const form = reactive<UniversityFormData>({
+    id: undefined,
     uName: '',
     mName: '',
-    tag: '',
-    role: []
+    bMName: '',
+    fMName: '',
+    score2025: undefined,
+    rank2025: undefined,
+    score2024: undefined,
+    rank2024: undefined,
+    plan2026: undefined,
+    plan2025: undefined,
+    remark: '',
+    sort: undefined,
+    adPro: undefined,
+    tag: ''
   })
 
-  // 表单验证规则
-  const rules: FormRules = {
-    username: [
-      { required: true, message: '请输入用户名', trigger: 'blur' },
-      { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
-    ],
-    phone: [
-      { required: true, message: '请输入手机号', trigger: 'blur' },
-      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
-    ],
-    gender: [{ required: true, message: '请选择性别', trigger: 'blur' }],
-    role: [{ required: true, message: '请选择角色', trigger: 'blur' }]
+  const rules = reactive<FormRules>({
+    uName: [{ required: true, message: '请输入大学名', trigger: 'blur' }],
+    mName: [{ required: true, message: '请输入专业名', trigger: 'blur' }]
+  })
+
+  /**
+   * 表单项配置
+   */
+  const formItems = computed<FormItem[]>(() => {
+    return [
+      { label: '大学名', key: 'uName', type: 'input', props: { placeholder: '大学名' } },
+      { label: '专业名', key: 'mName', type: 'input', props: { placeholder: '专业名' } },
+      { label: '专业大类名', key: 'bMName', type: 'input', props: { placeholder: '专业大类名' } },
+      { label: '一级专业名', key: 'fMName', type: 'input', props: { placeholder: '一级专业名' } },
+      {
+        label: '2025年分数线',
+        key: 'score2025',
+        type: 'number',
+        props: { min: 1, max: 750, controlsPosition: 'right', style: { width: '100%' } }
+      },
+      {
+        label: '2025年位次',
+        key: 'rank2025',
+        type: 'number',
+        props: { min: 1, controlsPosition: 'right', style: { width: '100%' } }
+      },
+      {
+        label: '2024年分数线',
+        key: 'score2024',
+        type: 'number',
+        props: { min: 1, max: 750, controlsPosition: 'right', style: { width: '100%' } }
+      },
+      {
+        label: '2024年位次',
+        key: 'rank2024',
+        type: 'number',
+        props: { min: 1, controlsPosition: 'right', style: { width: '100%' } }
+      },
+      {
+        label: '2026年招生计划',
+        key: 'plan2026',
+        type: 'number',
+        props: { min: 0, controlsPosition: 'right', style: { width: '100%' } }
+      },
+      {
+        label: '2025年招生计划',
+        key: 'plan2025',
+        type: 'number',
+        props: { min: 0, controlsPosition: 'right', style: { width: '100%' } }
+      },
+      {
+        label: '录取概率',
+        key: 'adPro',
+        type: 'number',
+        props: {
+          min: 0,
+          controlsPosition: 'right',
+          style: { width: '100%' },
+          formatter: (value: number) => `${value / 100}%`
+        }
+      },
+      {
+        label: '标签',
+        key: 'tag',
+        type: 'select',
+        options: [
+          { label: '冲', value: '1' },
+          { label: '稳', value: '2' },
+          { label: '保', value: '3' },
+          { label: '未标记', value: '-1' }
+        ]
+      },
+      {
+        label: '排序',
+        key: 'sort',
+        type: 'number',
+        props: { min: 0, controlsPosition: 'right', style: { width: '100%' } }
+      },
+      { label: '备注', key: 'remark', type: 'input', props: { placeholder: '备注' }, span: 24 }
+    ]
+  })
+
+  const dialogTitle = computed(() => {
+    return isEdit.value ? `编辑志愿` : `新建志愿`
+  })
+
+  /**
+   * 重置表单数据
+   */
+  const resetForm = (): void => {
+    formRef.value?.reset()
   }
 
   /**
-   * 初始化表单数据
-   * 根据对话框类型（新增/编辑）填充表单
+   * 加载表单数据（编辑模式）
    */
-  const initFormData = () => {
-    const isEdit = props.type === 'edit' && props.userData
-    const row = props.userData
+  const loadFormData = (): void => {
+    if (!props.editData) return
 
-    Object.assign(formData, {
-      uName: isEdit && row ? row.uName || '' : '',
-      mName: isEdit && row ? row.mName || '' : '',
-      tag: isEdit && row ? row.tag || '-1' : '-1'
+    isEdit.value = true
+
+    const row = props.editData
+    Object.keys(form).forEach((key) => {
+      if (key in row) {
+        form[key as keyof typeof form] = row[key as keyof typeof row]
+      }
     })
   }
-
-  /**
-   * 监听对话框状态变化
-   * 当对话框打开时初始化表单数据并清除验证状态
-   */
-  watch(
-    () => [props.visible, props.type, props.userData],
-    ([visible]) => {
-      if (visible) {
-        initFormData()
-        nextTick(() => {
-          formRef.value?.clearValidate()
-        })
-      }
-    },
-    { immediate: true }
-  )
 
   /**
    * 提交表单
-   * 验证通过后触发提交事件
    */
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     if (!formRef.value) return
 
-    await formRef.value.validate((valid) => {
-      if (valid) {
-        ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
-        dialogVisible.value = false
-        emit('submit')
-      }
-    })
+    try {
+      await formRef.value.validate()
+      emit('submit', { ...form })
+      handleCancel()
+    } catch {
+      ElMessage.error('表单校验失败，请检查输入')
+    }
   }
+
+  /**
+   * 取消操作
+   */
+  const handleCancel = (): void => {
+    emit('update:visible', false)
+  }
+
+  /**
+   * 对话框关闭后的回调
+   */
+  const handleClosed = (): void => {
+    resetForm()
+    isEdit.value = false
+  }
+
+  /**
+   * 监听对话框显示状态
+   */
+  watch(
+    () => props.visible,
+    (newVal) => {
+      if (newVal) {
+        nextTick(() => {
+          if (props.editData) {
+            loadFormData()
+          }
+        })
+      }
+    }
+  )
 </script>

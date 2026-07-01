@@ -27,12 +27,7 @@
       </ArtTable>
 
       <!-- 用户弹窗 -->
-      <HomeDialog
-        v-model:visible="dialogVisible"
-        :type="dialogType"
-        :user-data="currentUserData"
-        @submit="handleDialogSubmit"
-      />
+      <HomeDialog v-model:visible="dialogVisible" :editData="currentData" @submit="handleSubmit" />
     </ElCard>
   </div>
 </template>
@@ -46,7 +41,13 @@
   import { DialogType } from '@/types'
   import HomeSearch from '@views/home/modules/home-search.vue'
   import HomeDialog from '@views/home/modules/home-dialog.vue'
-  import { fetchPostUniversityList } from '@/api/university'
+  import {
+    addUniversity,
+    fetchPostUniversityList,
+    removeUniversity,
+    updateUniversity
+  } from '@/api/university'
+  import UniversityFormData = Api.University.UniversityFormData
 
   defineOptions({ name: 'Home' })
 
@@ -55,7 +56,7 @@
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
-  const currentUserData = ref<Partial<UniversityTable>>({})
+  const currentData = ref<Partial<UniversityTable>>({})
 
   // 选中行
   const selectedRows = ref<UniversityTable[]>([])
@@ -251,13 +252,17 @@
     getData()
   }
 
+  const handleDelete = (ids: number[]) => {
+    return removeUniversity(ids)
+  }
+
   /**
    * 显示用户弹窗
    */
   const showDialog = (type: DialogType, row?: UniversityTable): void => {
     console.log('打开弹窗:', { type, row })
     dialogType.value = type
-    currentUserData.value = row || {}
+    currentData.value = row || {}
     nextTick(() => {
       dialogVisible.value = true
     })
@@ -267,26 +272,29 @@
    * 删除用户
    */
   const deleteUser = (row: UniversityTable): void => {
-    console.log('删除用户:', row)
-    ElMessageBox.confirm(`确定要注销该用户吗？`, '注销用户', {
+    console.log('删除志愿:', row)
+    ElMessageBox.confirm(`确定要删除这条志愿吗？`, '删除志愿', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'error'
     }).then(() => {
-      ElMessage.success('注销成功')
+      handleDelete([row.id]).then(() => {
+        ElMessage.success('删除志愿成功')
+        getData()
+      })
     })
   }
 
   /**
    * 处理弹窗提交事件
    */
-  const handleDialogSubmit = async () => {
-    try {
-      dialogVisible.value = false
-      currentUserData.value = {}
-    } catch (error) {
-      console.error('提交失败:', error)
-    }
+  const handleSubmit = (formData: UniversityFormData) => {
+    console.log('提交数据:', formData)
+    const api = dialogType.value === 'add' ? addUniversity(formData) : updateUniversity(formData)
+    api.then(() => {
+      ElMessage.success(`${dialogType.value === 'add' ? '编辑' : '新增'}成功`)
+      getData()
+    })
   }
 
   /**

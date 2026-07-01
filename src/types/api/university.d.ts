@@ -3,7 +3,7 @@ declare namespace Api {
     type UniversityList = Api.Common.PaginatedResponse<Table>
 
     interface Table {
-      id: string
+      id: number
       uName: string
       mName: string
       bMName: string
@@ -19,6 +19,8 @@ declare namespace Api {
       adPro: number
       tag: string
     }
+
+    type UniversityFormData = Partial<Api.University.Table>
 
     type QueryParams = Partial<
       Pick<
