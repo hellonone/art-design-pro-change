@@ -6,7 +6,7 @@
           <ArtSvgIcon
             :icon="item.meta.icon"
             :color="theme?.iconColor"
-            :style="{ color: theme.iconColor }"
+            :style="{ color: theme?.iconColor }"
           />
         </div>
         <span class="menu-name">
@@ -18,7 +18,7 @@
       <SidebarSubmenu
         :list="item.children"
         :is-mobile="isMobile"
-        :level="level + 1"
+        :level="level ? level + 1 : 1"
         :theme="theme"
         @close="closeMenu"
       />
@@ -26,15 +26,15 @@
 
     <ElMenuItem
       v-else
-      :index="isExternalLink(item) ? undefined : item.path || item.meta.title"
-      :level-item="level + 1"
+      :index="isExternalLink(item) ? item.meta.title : item.path"
+      :level="level ? level + 1 : 1"
       @click="goPage(item)"
     >
       <div class="menu-icon flex-cc">
         <ArtSvgIcon
           :icon="item.meta.icon"
           :color="theme?.iconColor"
-          :style="{ color: theme.iconColor }"
+          :style="{ color: theme?.iconColor }"
         />
       </div>
       <div
@@ -48,7 +48,10 @@
           {{ formatMenuTitle(item.meta.title) }}
         </span>
         <div v-if="item.meta.showBadge" class="art-badge" />
-        <div v-if="item.meta.showTextBadge && (level > 0 || menuOpen)" class="art-text-badge">
+        <div
+          v-if="item.meta.showTextBadge && ((level && level > 0) || menuOpen)"
+          class="art-text-badge"
+        >
           {{ item.meta.showTextBadge }}
         </div>
       </template>
