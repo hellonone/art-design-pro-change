@@ -1,0 +1,116 @@
+@media (width <= 768px) {
+  .art-table-mobile-view {
+    padding: 4px 0;
+  }
+
+  .art-table-mobile-card {
+    margin-bottom: 8px;
+
+    :deep(.el-card__header) {
+      padding: 8px 12px !important;
+      border-top: 1px solid var(--default-border) !important;
+    }
+
+    :deep(.el-card__body) {
+      padding: 8px 12px !important;
+    }
+
+    :deep(.el-card__footer) {
+      padding: 8px 12px !important;
+      border-top: 1px solid var(--default-border) !important;
+    }
+  }
+
+  .art-mobile-card-header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+
+    .art-mobile-header-item {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+
+      :deep(.el-tag) {
+        padding: 2px 6px;
+        font-size: 12px;
+      }
+
+      span {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--art-gray-800);
+      }
+    }
+  }
+
+  .art-mobile-card-body {
+    padding: 0;
+  }
+
+  .art-mobile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--default-border);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .art-mobile-row-child {
+    padding-left: 12px;
+    border-bottom: none;
+
+    &:not(:last-child) {
+      border-bottom: 1px dashed var(--art-gray-100);
+    }
+  }
+
+  .art-mobile-group {
+    padding: 2px 0;
+  }
+
+  .art-mobile-group-label {
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--art-gray-800);
+  }
+
+  .art-mobile-label {
+    flex-shrink: 0;
+    width: 70px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--art-gray-700);
+  }
+
+  .art-mobile-value {
+    flex: 1;
+    padding-left: 8px;
+    font-size: 14px;
+    color: var(--art-gray-800);
+    text-align: right;
+    word-break: break-all;
+
+    :deep(.el-tag) {
+      padding: 2px 6px;
+      font-size: 12px;
+    }
+  }
+
+  .art-mobile-card-footer {
+    display: flex;
+    gap: 6px;
+
+    :deep(.el-button) {
+      flex: 1;
+      height: 32px;
+      padding: 0 8px;
+      font-size: 14px;
+    }
+  }
+}

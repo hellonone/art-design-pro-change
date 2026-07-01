@@ -41,6 +41,87 @@ type InferApiParams<T> = T extends (params: infer P) => any ? P : never
 type InferApiResponse<T> = T extends (params: any) => Promise<infer R> ? R : never
 type InferRecordType<T> = T extends Api.Common.PaginatedResponse<infer U> ? U : never
 
+export interface MobileSectionConfig<TRecord> {
+  /** 列名数组，对应 columnsFactory 中的 prop */
+  columns: string[]
+  /** 自定义格式化函数，可选 */
+  formatter?: (row: TRecord) => any
+}
+
+export interface MobileConfig<TRecord> {
+  /** 头部配置 */
+  header?: MobileSectionConfig<TRecord>
+  /** 列表内容配置 */
+  list?: MobileSectionConfig<TRecord>
+  /** 底部配置（通常是操作列） */
+  footer?: MobileSectionConfig<TRecord>
+}
+
+export interface ResolvedMobileSection<TRecord> {
+  /** 解析后的列配置 */
+  columns: ColumnOption<TRecord>[]
+  /** 自定义格式化函数 */
+  formatter?: (row: TRecord) => any
+}
+
+export interface ResolvedMobileConfig<TRecord> {
+  header?: ResolvedMobileSection<TRecord>
+  list?: ResolvedMobileSection<TRecord>
+  footer?: ResolvedMobileSection<TRecord>
+}
+
+function findColumnByProp<TRecord>(
+  columns: ColumnOption<TRecord>[],
+  prop: string
+): ColumnOption<TRecord> | undefined {
+  for (const col of columns) {
+    if (col.prop === prop) {
+      return col
+    }
+    if (col.children && col.children.length > 0) {
+      const found = findColumnByProp(col.children, prop)
+      if (found) {
+        return found
+      }
+    }
+  }
+  return undefined
+}
+
+function resolveMobileConfig<TRecord>(
+  columns: ColumnOption<TRecord>[],
+  mobileConfig: MobileConfig<TRecord> | undefined
+): ResolvedMobileConfig<TRecord> | undefined {
+  if (!mobileConfig) return undefined
+
+  const resolved: ResolvedMobileConfig<TRecord> = {}
+
+  const resolveSection = (
+    section: MobileSectionConfig<TRecord> | undefined
+  ): ResolvedMobileSection<TRecord> | undefined => {
+    if (!section || !section.columns || section.columns.length === 0) return undefined
+
+    const resolvedColumns: ColumnOption<TRecord>[] = []
+    for (const prop of section.columns) {
+      const col = findColumnByProp(columns, prop)
+      if (col) {
+        resolvedColumns.push(col)
+      }
+    }
+
+    return {
+      columns: resolvedColumns,
+      formatter: section.formatter
+    }
+  }
+
+  resolved.header = resolveSection(mobileConfig.header)
+  resolved.list = resolveSection(mobileConfig.list)
+  resolved.footer = resolveSection(mobileConfig.footer)
+
+  return resolved
+}
+
 // 优化的配置接口 - 支持自动类型推导
 export interface UseTableConfig<
   TApiFn extends (params: any) => Promise<any> = (params: any) => Promise<any>,
@@ -67,6 +148,8 @@ export interface UseTableConfig<
       /** 每页条数字段名，默认为 'size' */
       size?: string
     }
+    /** 移动端卡片配置 */
+    mobileConfig?: MobileConfig<TRecord>
   }
 
   // 数据处理
@@ -141,7 +224,8 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
       excludeParams = [],
       immediate = true,
       columnsFactory,
-      paginationKey
+      paginationKey,
+      mobileConfig
     },
     transform: { dataTransformer, responseAdapter = defaultResponseAdapter } = {},
     performance: {
@@ -229,6 +313,12 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
   const columnConfig = columnsFactory ? useTableColumns<TRecord>(columnsFactory) : null
   const columns = columnConfig?.columns
   const columnChecks = columnConfig?.columnChecks
+
+  // 移动端配置解析
+  const resolvedMobileConfig = computed(() => {
+    if (!columns.value || !mobileConfig) return undefined
+    return resolveMobileConfig(columns.value, mobileConfig)
+  })
 
   // 是否有数据
   const hasData = computed(() => data.value.length > 0)
@@ -751,7 +841,9 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
       /** 获取所有列配置 */
       getAllColumns: columnConfig.getAllColumns,
       /** 重置所有列配置到默认状态 */
-      resetColumns: columnConfig.resetColumns
+      resetColumns: columnConfig.resetColumns,
+      /** 解析后的移动端配置 */
+      mobileConfig: readonly(resolvedMobileConfig as ResolvedMobileConfig<any>)
     })
   }
 }
