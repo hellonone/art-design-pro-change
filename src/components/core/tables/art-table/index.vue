@@ -214,7 +214,7 @@
     useAttrs,
     type VNode
   } from 'vue'
-  import type { ElTable, TableProps } from 'element-plus'
+  import type { ElTable, TableInstance, TableProps } from 'element-plus'
   import { storeToRefs } from 'pinia'
   import { ColumnOption } from '@/types'
   import { useTableStore } from '@/store/modules/table'
@@ -226,7 +226,7 @@
 
   const { width } = useWindowSize()
   const isMobile = computed(() => width.value < 768)
-  const elTableRef = ref<InstanceType<typeof ElTable> | null>(null)
+  const elTableRef = ref<TableInstance | null>(null)
   const paginationRef = ref<HTMLElement>()
   const tableHeaderRef = ref<HTMLElement>()
   const tableStore = useTableStore()
