@@ -48,6 +48,8 @@
     updateUniversity
   } from '@/api/university'
   import UniversityFormData = Api.University.UniversityFormData
+  import { computed } from 'vue'
+  import { useWindowSize } from '@vueuse/core'
 
   defineOptions({ name: 'Home' })
 
@@ -60,6 +62,9 @@
 
   // 选中行
   const selectedRows = ref<UniversityTable[]>([])
+
+  const { width } = useWindowSize()
+  const isMobile = computed(() => width.value < 768)
 
   // 搜索表单
   const searchForm = ref({
@@ -122,10 +127,10 @@
       // },
       mobileConfig: {
         header: {
-          columns: ['tag', 'uName']
+          columns: ['tag', 'uName', 'sort']
         },
         list: {
-          columns: ['fMName', 'mName', 'score', 'rank', 'plan', 'remark', 'adPro']
+          columns: ['fMName', 'mName', 'score', 'rank', 'plan', 'adPro', 'remark']
         },
         footer: {
           columns: ['operation']
@@ -133,7 +138,25 @@
       },
       columnsFactory: () => [
         { type: 'selection' }, // 勾选列
-        { type: 'index', width: 60, label: '序号' }, // 序号
+        // { type: 'index', width: 60, label: '序号' }, // 序号
+        {
+          prop: 'sort',
+          label: '排序',
+          width: 80,
+          sortable: true,
+          formatter: (row) => {
+            if (isMobile.value) {
+              return h(
+                'div',
+                {
+                  class: 'l-tight'
+                },
+                row.sort ? '排序: ' + row.sort : ''
+              )
+            }
+            return row.sort ? row.sort : ''
+          }
+        },
         {
           prop: 'uName',
           label: '大学名',
@@ -189,8 +212,7 @@
           width: 120,
           sortable: true,
           formatter: (row) => {
-            const n: number = row.adPro / 10
-            return n + '%'
+            return row.adPro ? row.adPro / 10 + '%' : ''
           }
         },
         {
@@ -207,7 +229,6 @@
           prop: 'operation',
           label: '操作',
           width: 120,
-          fixed: 'right', // 固定列
           formatter: (row) =>
             h('div', [
               h(ArtButtonTable, {
@@ -292,8 +313,9 @@
     console.log('提交数据:', formData)
     const api = dialogType.value === 'add' ? addUniversity(formData) : updateUniversity(formData)
     api.then(() => {
-      ElMessage.success(`${dialogType.value === 'add' ? '编辑' : '新增'}成功`)
+      ElMessage.success(`${dialogType.value === 'add' ? '新增' : '编辑'}成功`)
       getData()
+      dialogVisible.value = false
     })
   }
 
@@ -305,3 +327,8 @@
     console.log('选中行数据:', selectedRows.value)
   }
 </script>
+<style>
+  .art-mobile-header-item:has(.l-tight) {
+    margin-left: auto;
+  }
+</style>

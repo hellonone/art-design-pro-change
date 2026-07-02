@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-  import type { FormRules } from 'element-plus'
+  import { ElInputNumber, FormRules } from 'element-plus'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import ArtForm from '@/components/core/forms/art-form/index.vue'
   import { useWindowSize } from '@vueuse/core'
@@ -129,12 +129,28 @@
       {
         label: '录取概率',
         key: 'adPro',
+        render: () => {
+          return h(
+            ElInputNumber,
+            {
+              modelValue: form.adPro ? form.adPro / 10 : undefined,
+              onChange: (value: number | undefined) => {
+                form.adPro = value ? value * 10 : undefined
+              },
+              min: 0,
+              controlsPosition: 'right',
+              style: { width: '100%' }
+            },
+            {
+              suffix: () => h('span', '%')
+            }
+          )
+        },
         type: 'number',
         props: {
           min: 0,
           controlsPosition: 'right',
-          style: { width: '100%' },
-          formatter: (value: number) => `${value / 100}%`
+          style: { width: '100%' }
         }
       },
       {
@@ -194,7 +210,7 @@
     try {
       await formRef.value.validate()
       emit('submit', { ...form })
-      handleCancel()
+      // handleCancel()
     } catch {
       ElMessage.error('表单校验失败，请检查输入')
     }
