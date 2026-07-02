@@ -84,6 +84,7 @@ declare namespace Api {
       username: string
       email: string
       avatar?: string
+      realName: string
     }
   }
 
