@@ -15,6 +15,7 @@
       </div>
     </div>
     <div v-else-if="isMobile && mobileConfig" class="art-table-mobile-view">
+      <slot name="mobile-forward" />
       <ElCard
         v-for="(row, index) in data"
         :key="row.id || index"
