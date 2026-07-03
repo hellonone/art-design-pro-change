@@ -24,7 +24,7 @@
     <template #footer>
       <span class="dialog-footer">
         <ElButton @click="handleCancel">取 消</ElButton>
-        <ElButton type="primary" @click="handleSubmit">确 定</ElButton>
+        <ElButton type="primary" v-loading="btnLoading" @click="handleSubmit">确 定</ElButton>
       </span>
     </template>
   </ElDialog>
@@ -42,15 +42,18 @@
   interface Props {
     visible: boolean
     editData?: any
+    btnLoading: boolean
   }
 
   interface Emits {
     (e: 'update:visible', value: boolean): void
+    (e: 'update:btnLoading', value: boolean): void
     (e: 'submit', data: UniversityFormData): void
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    visible: false
+    visible: false,
+    btnLoading: false
   })
 
   const emit = defineEmits<Emits>()
@@ -213,6 +216,7 @@
       // handleCancel()
     } catch {
       ElMessage.error('表单校验失败，请检查输入')
+      emit('update:btnLoading', false)
     }
   }
 

@@ -27,7 +27,12 @@
       </ArtTable>
 
       <!-- 用户弹窗 -->
-      <HomeDialog v-model:visible="dialogVisible" :editData="currentData" @submit="handleSubmit" />
+      <HomeDialog
+        :btn-loading="btnLoading"
+        v-model:visible="dialogVisible"
+        :editData="currentData"
+        @submit="handleSubmit"
+      />
     </ElCard>
   </div>
 </template>
@@ -58,6 +63,7 @@
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
+  const btnLoading = ref(false)
   const currentData = ref<Partial<UniversityTable>>({})
 
   // 选中行
@@ -198,7 +204,7 @@
           align: 'center',
           children: [
             { prop: 'plan2026', label: '2026', sortable: true, width: 100 },
-            { prop: 'rank2024', label: '2025', sortable: true, width: 100 }
+            { prop: 'plan2025', label: '2025', sortable: true, width: 100 }
           ]
         },
         {
@@ -311,11 +317,13 @@
    */
   const handleSubmit = (formData: UniversityFormData) => {
     console.log('提交数据:', formData)
+    btnLoading.value = true
     const api = dialogType.value === 'add' ? addUniversity(formData) : updateUniversity(formData)
     api.then(() => {
       ElMessage.success(`${dialogType.value === 'add' ? '新增' : '编辑'}成功`)
       getData()
       dialogVisible.value = false
+      btnLoading.value = false
     })
   }
 

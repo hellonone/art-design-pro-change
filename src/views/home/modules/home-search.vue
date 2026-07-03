@@ -95,6 +95,12 @@
       key: 'rank2024',
       type: 'number',
       clearable: true
+    },
+    {
+      label: '备注',
+      key: 'remark',
+      type: 'input',
+      clearable: true
     }
   ])
 
